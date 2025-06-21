@@ -30,3 +30,5 @@ fuzz.txt
 *.back
 osrframework-virtualenv
 possible_emails*
+.venv
+venv

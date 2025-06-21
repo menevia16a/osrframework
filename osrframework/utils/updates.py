@@ -1,92 +1,47 @@
-################################################################################
-#
-#    Copyright 2015-2020 Félix Brezo and Yaiza Rubio
-#
-#    This program is part of OSRFramework. You can redistribute it and/or modify
-#    it under the terms of the GNU Affero General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Affero General Public License for more details.
-#
-#    You should have received a copy of the GNU Affero General Public License
-#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-################################################################################
+"""
+Utility functions for OSRFramework updates, using importlib.metadata.
+"""
 
 import xmlrpc.client
+
+# Python ≥3.8 has importlib.metadata in stdlib
 try:
-    from pip._internal.utils.misc import get_installed_distributions
-except ImportError:  # pip<10
-    from pip import get_installed_distributions
+    from importlib.metadata import distributions, Distribution
+except ImportError:
+    # fallback for older Pythons via the backport package
+    from importlib_metadata import distributions, Distribution  # type: ignore
 
+class UpgradablePackage:
+    """
+    Wraps a Distribution for update checking.
+    """
+    def __init__(self, dist: Distribution):
+        self.name = dist.metadata.get("Name", dist.metadata.get("name", ""))
+        self.current_version = dist.version
+        self.latest_version = None
 
-class UpgradablePackage(object):
-    def __init__(self, package_name="osrframework",
-                 repository='https://pypi.python.org/pypi'):
-        """Checks if a locally installed package has an update
-
-        Args:
-            packake_name (str): The name of the package.
-            repository (str): Defines the repository. By default, the official
-                one.
+    def fetch_latest(self) -> str:
         """
-        installed_package = None
-        self.local_version = None
-        self.remote_version = None
-        self.repository = repository
-
-        for dist in get_installed_distributions():
-            if dist.project_name == package_name:
-                installed_package = dist
-                try:
-                    self.local_version = installed_package.version
-                except AttributeError:
-                    pass
-                break
-
-        pypi = xmlrpc.client .ServerProxy(repository)
-        # This is an array
-        version_available = pypi.package_releases(package_name)
-
-        try:
-            self.remote_version = version_available[0]
-            if version_available[0] < installed_package.version:
-                # No updates available
-                self.status = "unstable"
-            elif version_available[0] == installed_package.version:
-                # No updates available
-                self.status = "up-to-date"
-            else:
-                # There are updates available!
-                self.status = "outdated"
-        except IndexError:
-            self.status = "unknown"
-
-    def get_dict(self):
-        """Returns a dict representing the object representation
-
-        Returns:
-            A dict representing the information stored.
+        Fetch the latest version from PyPI.
         """
-        return {
-            "status": self.status,
-            "local_version": self.local_version,
-            "remote_version": self.remote_version,
-            "repository": self.repository,
-        }
+        import requests
+        resp = requests.get(f"https://pypi.org/pypi/{self.name}/json", timeout=10)
+        resp.raise_for_status()
+        info = resp.json().get("info", {})
+        self.latest_version = info.get("version", "")
+        return self.latest_version
 
-    def is_upgradable(self):
-        """Checks if a locally stored version of a file is outdated
-
-        Returns:
-            Bool if the local version is smaller than the remote one.
+    def is_upgradable(self) -> bool:
         """
-        return self.local_version < self.remote_version
+        Return True if a newer version exists on PyPI.
+        """
+        if self.latest_version is None:
+            self.fetch_latest()
+        from packaging.version import Version
+        return Version(self.latest_version) > Version(self.current_version)
 
-
-if __name__ == "__main__":
-    print(UpgradablePackage(package_name="osrframework").get_dict())
+def check_for_updates() -> list[UpgradablePackage]:
+    """
+    Return a list of UpgradablePackage for all installed dists.
+    """
+    return [UpgradablePackage(dist) for dist in distributions()]

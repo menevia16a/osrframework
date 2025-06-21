@@ -35,7 +35,6 @@ import osrframework.upgrade as upgrade
 
 EPILOG = """
   Use 'osrf <command> --help' to learn more about each command.\n\n
-
   Check OSRFramework README.md file for further details on the usage of this
   program or follow us on Twitter in <http://twitter.com/i3visio>.
 """
@@ -69,50 +68,49 @@ def get_parser():
         dest='command_name'
     )
 
-    subparser_alias_generator = subcommands.add_parser(
+    subcommands.add_parser(
         "alias_generator",
         help="Generates a list of candidate usernames based on known information.",
         parents=[alias_generator.get_parser()]
     )
-    subparser_checkfy = subcommands.add_parser(
+    subcommands.add_parser(
         "checkfy",
         help="Verifies if a given email address matches a pattern.",
         parents=[checkfy.get_parser()]
     )
-    subparser_domainfy = subcommands.add_parser(
+    subcommands.add_parser(
         "domainfy",
         help="Checks whether domain names using words and nicknames are available.",
         parents=[domainfy.get_parser()]
     )
-    subparser_mailfy = subcommands.add_parser(
+    subcommands.add_parser(
         "mailfy",
-        help="Gets information about email accounts. ",
+        help="Gets information about email accounts.",
         parents=[mailfy.get_parser()]
     )
-    subparser_phonefy = subcommands.add_parser(
+    subcommands.add_parser(
         "phonefy",
         help="Looks for information linked to spam practices by a phone number.",
         parents=[phonefy.get_parser()]
     )
-    subparser_searchfy = subcommands.add_parser(
+    subcommands.add_parser(
         "searchfy",
         help="Performs queries on several platforms.",
         parents=[searchfy.get_parser()]
     )
-    subparser_usufy = subcommands.add_parser(
+    subcommands.add_parser(
         "usufy",
         help="Looks for registered accounts with given nicknames.",
         parents=[usufy.get_parser()]
     )
-    subparser_upgrade = subcommands.add_parser(
+    subcommands.add_parser(
         "upgrade",
         help="Updates the module.",
-        parents=[upgrade.get_parser()]
+        parents=[upgrade.get_parser(include_help=False)]
     )
 
     # About options
     group_about = parser.add_argument_group('ABOUT ARGUMENTS', 'Showing additional information about this program.')
-    group_about.add_argument('-h', '--help', action='help', help='shows this help and exists.')
     group_about.add_argument('--license', action='store_true', default=False, help='shows the AGPLv3+ license and exists.')
     group_about.add_argument('--version', action='version', version='[%(prog)s] OSRFramework ' + osrframework.__version__, help='shows the version of the program and exists.')
 
@@ -137,18 +135,18 @@ def main(params=None):
 
     try:
         if params is None:
-            args = parser.parse_args(params)
-        else:
             args = parser.parse_args()
+        else:
+            args = parser.parse_args(params)
     except Exception:
         sys.exit(0)
 
     if args.license:
         general.showLicense()
 
-    # Launch the appropiate util
+    # Launch the appropriate util
     if args.command_name:
-        module = importlib.import_module("osrframework.{}".format(args.command_name))
+        module = importlib.import_module(f"osrframework.{args.command_name}")
         module.main(args)
         sys.exit(0)
     else:

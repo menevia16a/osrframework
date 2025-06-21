@@ -21,6 +21,7 @@
 import argparse
 import datetime as dt
 import json
+import sys
 import os
 import re
 
@@ -131,12 +132,14 @@ def main(params=None):
     Returns:
         list: Returns a list with i3visio entities.
     """
-    if params is None:
-        parser = get_parser()
+    parser = get_parser()
+    
+    # If called with a raw argv list, parse it; otherwise assume it's already 'args'
+    if isinstance(params, list):
         args = parser.parse_args(params)
     else:
         args = params
-
+    
     results = []
     if not args.quiet:
         print(general.title(banner.text))
@@ -154,9 +157,11 @@ visit <{}>.
         general.showLicense()
     else:
         if args.type == "twitter":
-            pattern = args.email_pattern.replace(".", "\.")
-            pattern = pattern.replace("*", ".")
-            pattern = "^{}$".format(pattern)
+            # If using Twitter‑style pattern, escape dots and convert wildcard
+            pattern = args.email_pattern.replace('.', r'\.')
+            pattern = pattern.replace('*', '.')
+            pattern = f"^{pattern}$"
+
         elif args.type == "regexp":
             pattern = args.email_pattern
 

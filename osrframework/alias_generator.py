@@ -2862,12 +2862,15 @@ def main(params=None):
             None when this is called by an entry_point. If it is called by osrf
             the data is already parsed.
     """
-    if params is None:
-        parser = get_parser()
+    # Always build a parser
+    parser = get_parser()
+    
+    # If 'params' is a raw argv list, parse it; if it's already an args namespace, use it
+    if isinstance(params, list):
         args = parser.parse_args(params)
     else:
         args = params
-
+    
     print(general.title(banner.text))
 
     extra_words = args.extra_words

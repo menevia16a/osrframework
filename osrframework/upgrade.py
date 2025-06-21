@@ -1,98 +1,101 @@
-################################################################################
-#
-#    Copyright 2015-2021 Félix Brezo and Yaiza Rubio
-#
-#    This program is part of OSRFramework. You can redistribute it and/or modify
-#    it under the terms of the GNU Affero General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Affero General Public License for more details.
-#
-#    You should have received a copy of the GNU Affero General Public License
-#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-################################################################################
-
+#!/usr/bin/env python3
+"""
+OSRFramework upgrade script, using importlib.metadata for local version.
+"""
 
 import argparse
 import datetime as dt
 import json
 import os
-from subprocess import call
 import sys
+from subprocess import call
 
 import osrframework
 import osrframework.utils.general as general
-from osrframework.utils.updates import UpgradablePackage
 import osrframework.utils.banner as banner
+from osrframework.utils.updates import UpgradablePackage
 
-def get_parser():
-    parser = argparse.ArgumentParser(description='OSRFramework upgrade script.', prog='upgrade', epilog='Check the README.md file for further details on the usage of this program or follow us on Twitter in <http://twitter.com/i3visio>.', add_help=False, conflict_handler='resolve')
-
-    # Configuring the processing options
-    group_processing = parser.add_argument_group('Processing arguments', 'For the wrapper')
-    group_processing.add_argument('--only-check', action='store_true', default=False, help='prevents the script from upgradeing OSRFramework')
-    group_processing.add_argument('--use-development', action='store_true', default=False, help='looks for development versions')
+# Python ≥3.8: importlib.metadata
+try:
+    from importlib.metadata import distribution, PackageNotFoundError
+except ImportError:
+    from importlib_metadata import distribution, PackageNotFoundError  # type: ignore
 
 
-    # About options
-    group_about = parser.add_argument_group('About arguments', 'Showing additional information about this program.')
-    group_about.add_argument('-h', '--help', action='help', help='shows this help and exists.')
-    group_about.add_argument('--version', action='version', version='[%(prog)s] OSRFramework ' + osrframework.__version__, help='shows the version of the program and exists.')
-
+def get_parser(include_help=True) -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="OSRFramework upgrade tool",
+        prog="upgrade",
+        epilog="See README.md for details.",
+        add_help=include_help
+    )
+    grp = parser.add_argument_group("Options")
+    grp.add_argument(
+        "--only-check", action="store_true", default=False,
+        help="Only check for updates, do not install"
+    )
+    grp.add_argument(
+        "--use-development", action="store_true", default=False,
+        help="Allow prerelease versions"
+    )
+    if include_help:
+        grp.add_argument(
+            "-h", "--help", action="help",
+            help="Show this help message and exit"
+        )
+        grp.add_argument(
+            "--version", action="version",
+            version=f"%(prog)s {osrframework.__version__}",
+            help="Show program version and exit"
+        )
     return parser
 
 
 def main(args=None):
+    args = get_parser().parse_args(args)
     print(general.title(banner.text))
 
-    saying_hello = f"""
-      OSRFramework Upgrade Tool | Copyright (C) Yaiza Rubio & Félix Brezo (i3visio) 2014-2020
+    print(general.info(f"""
+  OSRFramework Upgrade Tool | © Yaiza Rubio & Félix Brezo (i3visio) 2014-2025
 
-This program comes with ABSOLUTELY NO WARRANTY. This is free software, and you
-are welcome to redistribute it under certain conditions. For additional info,
-visit <{general.LICENSE_URL}>.
-"""
-    print(general.info(saying_hello))
-
-    startTime = dt.datetime.now()
-    print(f"{startTime}\tGrabbing information about local and upstream versions of OSRFramework…\n")
-    package = UpgradablePackage(package_name="osrframework")
-    print(f"Details:\n{general.emphasis(json.dumps(package.get_dict(), indent=2))}\n")
+  This is free software with ABSOLUTELY NO WARRANTY.
+"""))
 
     now = dt.datetime.now()
-    if package.is_upgradable():
-        print(f"{now}\tLocal version of OSRFramework {general.warning('can be upgraded')} to version {package.get_dict()['remote_version']}.\n")
-        if not args.only_check:
-            now = dt.datetime.now()
-            cmd = ["pip3", "install", "osrframework", "--upgrade"]
+    print(f"{now}\tChecking local vs PyPI version…\n")
 
-            # Installing development versions
+    try:
+        dist = distribution("osrframework")
+    except PackageNotFoundError:
+        print(general.error("OSRFramework not installed!"))
+        sys.exit(1)
+
+    pkg = UpgradablePackage(dist)
+    details = {
+        "local_version":  pkg.current_version,
+        "latest_version": pkg.fetch_latest()
+    }
+    print(general.emphasis(json.dumps(details, indent=2)) + "\n")
+
+    now = dt.datetime.now()
+    if pkg.is_upgradable():
+        print(f"{now}\tAn update is available: {pkg.current_version} → {pkg.latest_version}\n")
+        if not args.only_check:
+            cmd = ["pip3", "install", "osrframework", "--upgrade"]
             if args.use_development:
                 cmd.append("--pre")
-
-            # Make installation for the user
-            if not sys.platform == 'win32' or os.geteuid() != 0:
+            if os.geteuid() != 0 and sys.platform != "win32":
                 cmd.append("--user")
-            print(f"{now}\tTrying to upgrade the package running '{' '.join(cmd)}'...")
 
+            print(f"{now}\tRunning: {' '.join(cmd)}")
             status = call(cmd)
-            if status:
-                # Displaying a warning if this is being run in a windows system
-                if sys.platform == 'win32':
-                    print(f"{now}\t{general.error('Installation failed')}.")
-                else:
-                    print(f"{now}\t{general.error('Installation failed')}. Retry the installation as a superuser: '{' '.join(['sudo'] + cmd)}'")
+            if status != 0:
+                print(general.error("Upgrade failed"))
                 sys.exit(1)
             else:
-                print(f"{now}\t{general.error('Installation sucessful')}. Upgraded to '{general.success(package.get_dict()['remote_version'])}'.")
-
+                print(general.success(f"Successfully upgraded to {pkg.latest_version}"))
     else:
-        print(f"{now}\tLocal version of OSRFramework ({package.get_dict()['local_version']}) {general.success('is up to date')} with the remote version ({package.get_dict()['remote_version']}).\n")
+        print(f"{now}\tAlready up to date: {pkg.current_version}")
 
 
 if __name__ == "__main__":

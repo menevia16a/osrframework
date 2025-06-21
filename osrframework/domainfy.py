@@ -19,6 +19,7 @@
 
 import argparse
 import datetime as dt
+import sys
 import json
 import os
 import signal
@@ -465,26 +466,16 @@ def get_parser():
 
 
 def main(params=None):
-    """Main function to launch phonefy
+    """Main function to launch domainfy"""
+    # Always build the parser first
+    parser = get_parser()
 
-    The function is created in this way so as to let other applications make
-    use of the full configuration capabilities of the application. The
-    parameters received are used as parsed by this modules `get_parser()`.
-
-    Args:
-        params: A list with the parameters as grabbed by the terminal. It is
-            None when this is called by an entry_point. If it is called by osrf
-            the data is already parsed.
-
-    Returns:
-        list: Returns a list with i3visio entities.
-    """
-    if params is None:
-        parser = get_parser()
+    # If 'params' is a raw argv list, parse it; otherwise assume it's already the args namespace
+    if isinstance(params, list):
         args = parser.parse_args(params)
     else:
         args = params
-
+    
     results = []
     if not args.quiet:
         print(general.title(banner.text))

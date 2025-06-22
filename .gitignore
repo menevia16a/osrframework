@@ -32,3 +32,4 @@ osrframework-virtualenv
 possible_emails*
 .venv
 venv
+config/*.cfg

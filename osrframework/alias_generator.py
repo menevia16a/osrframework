@@ -75,13 +75,20 @@ def generate(name=None, surname1=None, surname2=None, city=None, country=None,
     Returns
         list: An ordered list of the nicknames generated.
     """
-    # Lowering all the info received
-    name = name.lower()
-    surname1 = surname1.lower()
-    surname2 = surname2.lower()
-    year = year.lower()
-    country = country.lower()
-    city = city.lower()
+    # Lowering all the info received (but only if defined)
+    if name:
+        name = name.lower()
+    if surname1:
+        surname1 = surname1.lower()
+    if surname2:
+        surname2 = surname2.lower()
+    if year:
+        year = year.lower()
+    if country:
+        country = country.lower()
+    if city:
+        city = city.lower()
+
 
     # Check if the value provided is a '' string
     if name == '':

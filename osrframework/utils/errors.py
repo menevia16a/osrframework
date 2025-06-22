@@ -32,7 +32,7 @@ class Error(Exception):
     def __init__(self, reason="OSRFramework Generic Error.", steps = "No more information here. Just have a look at the code :(."):
         self.reason = reason
         self.steps = steps
-        self.post = "If you need more information on how to solve this, copy this information and ask us by placing an issue at <https://github.com/i3visio/osrframework/issues>."
+        self.post = "If you need more information on how to solve this, copy this information and ask us by placing an issue at <https://github.com/menevia16a/osrframework/issues>."
 
     def __str__(self):
         return "\n\t- Oh! What's happening? > " + self.reason + "\n\t- How can I solve this? > " + self.steps + "\n\t- This is not enough... > " + self.post

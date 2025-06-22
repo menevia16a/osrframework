@@ -54,7 +54,7 @@ def get_parser():
     parser = argparse.ArgumentParser(
         description='searchfy - Performs queries on configured OSRFramework platforms.',
         prog='searchfy',
-        epilog='See README.md or https://github.com/i3visio/osrframework for more info.',
+        epilog='See README.md or https://github.com/menevia1a/osrframework for more info.',
         add_help=False,
         conflict_handler='resolve'
     )

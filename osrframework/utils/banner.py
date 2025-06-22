@@ -97,6 +97,6 @@ footer = """
 Did something go wrong? Is a platform reporting false positives? Do you need to
 integrate a new one and you don't know how to start? Then, you can always place
 an issue in the Github project:
-    https://github.com/i3visio/osrframework/issues
+    https://github.com/menevia16a/osrframework/issues
 Note that otherwise, we won't know about it!
 """

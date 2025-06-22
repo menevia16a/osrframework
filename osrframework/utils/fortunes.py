@@ -57,5 +57,5 @@ messages = [
     "-- The 'osrf' tool will list all the tools as subcommands. --",
     "-- 'osrf usufy -n i3visio ' and 'usufy -n i3visio' has the same effect. --",
     "-- Config files live in '{configuration.get_config_path['appPath']}'. --",
-    "-- FAQ at <https://github.com/i3visio/osrframework/blob/master/doc/FAQ.md>! --"
+    "-- FAQ at <https://github.com/menevia16a/osrframework/blob/master/doc/FAQ.md>! --"
 ]

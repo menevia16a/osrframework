@@ -692,7 +692,7 @@ def open_results_in_browser(res):
     """
     print(emphasis("\n\tOpening URIs in the default web browser..."))
 
-    urisToBrowser(["https://github.com/i3visio/osrframework"], autoraise=False)
+    urisToBrowser(["https://github.com/menevia16a/osrframework"], autoraise=False)
     # Waiting 2 seconds to confirm that the browser is opened and prevent the OS from opening several windows
     time.sleep(2)
 

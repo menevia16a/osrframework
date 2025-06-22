@@ -28,8 +28,12 @@ import webbrowser as wb
 import colorama
 colorama.init(autoreset=True)
 import networkx as nx
+import pyexcel as pe
+import pyexcel_text
 
+from tabulate import tabulate
 
+pyexcel_text.TABLEFMT = "grid"
 LICENSE_URL = "https://www.gnu.org/licenses/agpl-3.0.txt"
 
 
@@ -269,50 +273,42 @@ def osrf_to_json_export(d, file_path):
     with open (file_path, "w") as oF:
         oF.write(jsonText)
 
-
-def osrf_to_text_export(data, file_path=None):
+def osrf_to_text_export(data, file_path):
     """
-    Workaround to export to a .txt file or to show the information.
+    Write a plain-text tabular export of results.
 
     Args:
-        data (list): Data to export.
-        file_path: File path for the output file. If None was provided, it will
-            assume that it has to print it.
-
-    Returns:
-        str: It sometimes returns a unicode representation of the Sheet
-            received.
+        data (list): i3visio-style entity result list
+        file_path (str): .txt file path
     """
-    # Manual check...
-    if len(data) == 0:
-        return "+------------------+\n| No data found... |\n+------------------+"
+    if not data:
+        with open(file_path, "w") as f:
+            f.write("+------------------+\n| No data found... |\n+------------------+")
+        return
 
-    import pyexcel as pe
-    import pyexcel.ext.text as text
+    # Build rows: one per result
+    headers = ["Alias", "Platform", "URI"]
+    rows = []
 
-    try:
-        old_data = get_data(file_path)
-    except Exception:
-        # No information has been recovered
-        old_data = {"OSRFramework":[]}
+    for obj in data:
+        nick = obj.get("value", "")
+        platform = ""
+        uri = ""
 
-    # Generating the new tabular data
-    tabular_data = _generate_tabular_data(data, {"OSRFramework":[[]]}, is_terminal=True)
+        for att in obj.get("attributes", []):
+            if att.get("type") == "com.i3visio.Platform":
+                platform = att.get("value", "")
+            elif att.get("type") == "com.i3visio.URI":
+                uri = att.get("value", "")
 
-    # The tabular data contains a dict representing the whole book and we need only the sheet!!
-    sheet = pe.Sheet(tabular_data["OSRFramework"])
-    sheet.name = "Objects recovered (" + getCurrentStrDatetime() +")."
-    # Defining the headers
-    sheet.name_columns_by_row(0)
-    text.TABLEFMT = "grid"
+        rows.append([nick, platform, uri])
 
-    try:
-        with open(file_path, "w") as file:
-            file.write(str(sheet))
-    except Exception:
-        # If a file_path was not provided... We will only return the info to be printed:
-        return sheet
+    table = tabulate(rows, headers=headers, tablefmt="grid")
 
+    with open(file_path, "w") as f:
+        f.write(table)
+
+    return table
 
 def osrf_to_csv_export(data, file_path):
     """
